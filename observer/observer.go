@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"regexp"
 	"sort"
 	"sync"
 	"time"
@@ -126,14 +127,14 @@ func (s *service) connectToSnoozeThis() error {
 }
 
 func (s *service) addObservable(o *pb.Observable) {
-	if !checkSignature(o) {
+	if msg := checkObservable(o); msg != "" {
 		s.mtx.Lock()
 		defer s.mtx.Unlock()
 		if err := s.snoozeThisClientStream.Send(&pb.ObserverToSnoozeThis{
 			Msg: &pb.ObserverToSnoozeThis_RejectObservable{
 				RejectObservable: &pb.RejectObservable{
 					Id:      o.Id,
-					Message: "signature invalid",
+					Message: msg,
 				},
 			},
 		}); err != nil {
@@ -224,6 +225,18 @@ func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error
 			return fmt.Errorf("unexpected %T from Scanner", msg.Msg)
 		}
 	}
+}
+
+func checkObservable(o *pb.Observable) string {
+	if !checkSignature(o) {
+		return "signature is invalid"
+	}
+	for _, f := range o.Filters {
+		if _, err := regexp.Compile(f.GetRegexp()); err != nil {
+			return "regexp was invalid"
+		}
+	}
+	return ""
 }
 
 func checkSignature(o *pb.Observable) bool {
