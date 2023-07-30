@@ -88,7 +88,6 @@ func (s *service) connectToSnoozeThis() error {
 	if err := stream.Send(&pb.ObserverToSnoozeThis{
 		Msg: &pb.ObserverToSnoozeThis_Register{
 			Register: &pb.RegisterObserverRequest{
-				Url:              "http://logs.local/",
 				LogInstanceToken: "secret",
 			},
 		},

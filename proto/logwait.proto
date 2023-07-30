@@ -20,8 +20,7 @@ message Observable {
 }
 
 message RegisterObserverRequest {
-	string url = 1;
-	string log_instance_token = 2;
+	string log_instance_token = 1;
 }
 
 message RegisterObserverResponse {
