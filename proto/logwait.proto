@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package com.snoozethis.logwait;
+
+option go_package = "github.com/SnoozeThis-org/logwait";
+
+service SnoozeThisLogService {
+	rpc Communicate(stream ObserverToSnoozeThis) returns (stream SnoozeThisToObserver) {}
+}
+
+message Filter {
+	string field = 1;
+	string regexp = 2;
+}
+
+message Observable {
+	int64 id = 1;
+	string signature = 2;
+	repeated Filter filters = 3;
+}
+
+message RegisterObserverRequest {
+	string url = 1;
+	string log_instance_token = 2;
+}
+
+message RegisterObserverResponse {
+	repeated Observable active_observables = 1;
+}
+
+message ObserverToSnoozeThis {
+	oneof msg {
+		RegisterObserverRequest register = 1;
+		int64 observed_observable = 2;
+	}
+}
+
+message SnoozeThisToObserver {
+	oneof msg {
+		RegisterObserverResponse register = 1;
+		Observable new_observable = 2;
+		int64 cancel_observable = 3;
+	}
+}
+
+service ObserverService {
+	rpc Communicate(stream CollectorToObserver) returns (stream ObserverToCollector) {}
+}
+
+message RegisterCollectorRequest {
+}
+
+message RegisterCollectorResponse {
+	repeated Observable active_observables = 1;
+}
+
+message CollectorToObserver {
+	oneof msg {
+		RegisterCollectorRequest register = 1;
+		int64 observed_observable = 2;
+	}
+}
+
+message ObserverToCollector {
+	oneof msg {
+		RegisterCollectorResponse register = 1;
+		Observable new_observable = 2;
+		int64 cancel_observable = 3;
+	}
+}
