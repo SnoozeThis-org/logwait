@@ -14,7 +14,7 @@ message Filter {
 }
 
 message Observable {
-	int64 id = 1;
+	string id = 1;
 	string signature = 2;
 	repeated Filter filters = 3;
 }
@@ -28,14 +28,14 @@ message RegisterObserverResponse {
 }
 
 message RejectObservable {
-	int64 id = 1;
+	string id = 1;
 	string message = 2;
 }
 
 message ObserverToSnoozeThis {
 	oneof msg {
 		RegisterObserverRequest register = 1;
-		int64 observed_observable = 2;
+		string observed_observable = 2;
 		RejectObservable reject_observable = 3;
 	}
 }
@@ -44,7 +44,7 @@ message SnoozeThisToObserver {
 	oneof msg {
 		RegisterObserverResponse register = 1;
 		Observable new_observable = 2;
-		int64 cancel_observable = 3;
+		string cancel_observable = 3;
 	}
 }
 
@@ -62,7 +62,7 @@ message RegisterScannerResponse {
 message ScannerToObserver {
 	oneof msg {
 		RegisterScannerRequest register = 1;
-		int64 observed_observable = 2;
+		string observed_observable = 2;
 	}
 }
 
@@ -70,6 +70,6 @@ message ObserverToScanner {
 	oneof msg {
 		RegisterScannerResponse register = 1;
 		Observable new_observable = 2;
-		int64 cancel_observable = 3;
+		string cancel_observable = 3;
 	}
 }

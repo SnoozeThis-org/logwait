@@ -31,7 +31,7 @@ var (
 
 type service struct {
 	mtx                       sync.Mutex
-	activeObservables         map[int64]*pb.Observable
+	activeObservables         map[string]*pb.Observable
 	connectedScanners         map[pb.ObserverService_CommunicateServer]struct{}
 	snoozeThisClient          pb.SnoozeThisLogServiceClient
 	snoozeThisClientStream    pb.SnoozeThisLogService_CommunicateClient
@@ -45,7 +45,7 @@ func main() {
 	}
 
 	srv := &service{
-		activeObservables:         map[int64]*pb.Observable{},
+		activeObservables:         map[string]*pb.Observable{},
 		connectedScanners:         map[pb.ObserverService_CommunicateServer]struct{}{},
 		snoozeThisClient:          pb.NewSnoozeThisLogServiceClient(c),
 		initialObservablesFetched: make(chan struct{}),
@@ -155,7 +155,7 @@ func (s *service) addObservable(o *pb.Observable) {
 	}
 }
 
-func (s *service) cancelObservable(id int64) {
+func (s *service) cancelObservable(id string) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	delete(s.activeObservables, id)
@@ -169,7 +169,7 @@ func (s *service) cancelObservable(id int64) {
 	}
 }
 
-func (s *service) observedObservable(id int64) {
+func (s *service) observedObservable(id string) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	if err := s.snoozeThisClientStream.Send(&pb.ObserverToSnoozeThis{
