@@ -44,26 +44,26 @@ message SnoozeThisToObserver {
 }
 
 service ObserverService {
-	rpc Communicate(stream CollectorToObserver) returns (stream ObserverToCollector) {}
+	rpc Communicate(stream ScannerToObserver) returns (stream ObserverToScanner) {}
 }
 
-message RegisterCollectorRequest {
+message RegisterScannerRequest {
 }
 
-message RegisterCollectorResponse {
+message RegisterScannerResponse {
 	repeated Observable active_observables = 1;
 }
 
-message CollectorToObserver {
+message ScannerToObserver {
 	oneof msg {
-		RegisterCollectorRequest register = 1;
+		RegisterScannerRequest register = 1;
 		int64 observed_observable = 2;
 	}
 }
 
-message ObserverToCollector {
+message ObserverToScanner {
 	oneof msg {
-		RegisterCollectorResponse register = 1;
+		RegisterScannerResponse register = 1;
 		Observable new_observable = 2;
 		int64 cancel_observable = 3;
 	}
