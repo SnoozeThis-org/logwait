@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ObserverAddress = flag.String("observer-address", "localhost:1710", "gRPC address of the observer")
+	ObserverAddress = flag.String("observer-address", "localhost:1600", "gRPC address of the observer")
 )
 
 type Observable struct {
@@ -24,6 +24,8 @@ type Observable struct {
 }
 
 type Service struct {
+	StartObserving func()
+	StopObserving  func()
 	mtx            sync.Mutex
 	observables    map[string]Observable
 	observerClient pb.ObserverServiceClient
@@ -121,6 +123,10 @@ func (s *Service) addObservable(o *pb.Observable) {
 	for _, f := range o.Filters {
 		val.Regexps[f.Field] = regexp.MustCompile(f.Regexp)
 	}
+
+	if s.StartObserving != nil && len(s.observables) == 0 {
+		s.StartObserving()
+	}
 	s.observables[o.Id] = val
 }
 
@@ -128,6 +134,10 @@ func (s *Service) cancelObservable(id string) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	delete(s.observables, id)
+
+	if s.StopObserving != nil && len(s.observables) == 0 {
+		s.StopObserving()
+	}
 }
 
 func (s *Service) notifyObserver(id string) {
@@ -141,12 +151,9 @@ func (s *Service) notifyObserver(id string) {
 	if !o.observed {
 		return
 	}
-	err := s.observerStream.Send(&pb.ScannerToObserver{
+	s.observerStream.Send(&pb.ScannerToObserver{
 		Msg: &pb.ScannerToObserver_ObservedObservable{
 			ObservedObservable: id,
 		},
 	})
-	if err == nil {
-		delete(s.observables, id)
-	}
 }
