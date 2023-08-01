@@ -53,7 +53,7 @@ func main() {
 		initialObservablesFetched: make(chan struct{}),
 	}
 
-	go srv.connectLoop()
+	go srv.talkToSnoozeThisLoop()
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", *grpcPort))
 	if err != nil {
@@ -71,10 +71,10 @@ func main() {
 	log.Fatalf("HTTP server died: %v", http.ListenAndServe(fmt.Sprintf(":%d", *httpPort), nil))
 }
 
-func (s *service) connectLoop() {
+func (s *service) talkToSnoozeThisLoop() {
 	failures := 0
 	for {
-		if err := s.connectToSnoozeThis(); err != nil {
+		if err := s.talkToSnoozeThis(); err != nil {
 			log.Printf("Error while talking to SnoozeThis: %v", err)
 		}
 		failures++
@@ -82,7 +82,7 @@ func (s *service) connectLoop() {
 	}
 }
 
-func (s *service) connectToSnoozeThis() error {
+func (s *service) talkToSnoozeThis() error {
 	ctx := context.Background()
 	stream, err := s.snoozeThisClient.Communicate(ctx)
 	if err != nil {
