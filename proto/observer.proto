@@ -4,19 +4,10 @@ package com.snoozethis.logwait;
 
 option go_package = "github.com/SnoozeThis-org/logwait";
 
+import "common.proto";
+
 service SnoozeThisLogService {
 	rpc Communicate(stream ObserverToSnoozeThis) returns (stream SnoozeThisToObserver) {}
-}
-
-message Filter {
-	string field = 1;
-	string regexp = 2;
-}
-
-message Observable {
-	string id = 1;
-	string signature = 2;
-	repeated Filter filters = 3;
 }
 
 message RegisterObserverRequest {
@@ -43,32 +34,6 @@ message ObserverToSnoozeThis {
 message SnoozeThisToObserver {
 	oneof msg {
 		RegisterObserverResponse register = 1;
-		Observable new_observable = 2;
-		string cancel_observable = 3;
-	}
-}
-
-service ObserverService {
-	rpc Communicate(stream ScannerToObserver) returns (stream ObserverToScanner) {}
-}
-
-message RegisterScannerRequest {
-}
-
-message RegisterScannerResponse {
-	repeated Observable active_observables = 1;
-}
-
-message ScannerToObserver {
-	oneof msg {
-		RegisterScannerRequest register = 1;
-		string observed_observable = 2;
-	}
-}
-
-message ObserverToScanner {
-	oneof msg {
-		RegisterScannerResponse register = 1;
 		Observable new_observable = 2;
 		string cancel_observable = 3;
 	}

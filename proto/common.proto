@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package com.snoozethis.logwait;
+
+option go_package = "github.com/SnoozeThis-org/logwait";
+
+message Filter {
+	string field = 1;
+	string regexp = 2;
+}
+
+message Observable {
+	string id = 1;
+	string signature = 2;
+	repeated Filter filters = 3;
+}

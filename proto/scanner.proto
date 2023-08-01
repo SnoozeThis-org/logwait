@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package com.snoozethis.logwait;
+
+option go_package = "github.com/SnoozeThis-org/logwait";
+
+import "common.proto";
+
+service ObserverService {
+	rpc Communicate(stream ScannerToObserver) returns (stream ObserverToScanner) {}
+}
+
+message RegisterScannerRequest {
+}
+
+message RegisterScannerResponse {
+	repeated Observable active_observables = 1;
+}
+
+message ScannerToObserver {
+	oneof msg {
+		RegisterScannerRequest register = 1;
+		string observed_observable = 2;
+	}
+}
+
+message ObserverToScanner {
+	oneof msg {
+		RegisterScannerResponse register = 1;
+		Observable new_observable = 2;
+		string cancel_observable = 3;
+	}
+}
