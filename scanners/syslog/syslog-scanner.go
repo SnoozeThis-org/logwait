@@ -71,10 +71,7 @@ func main() {
 		go handleUnix(c)
 	}
 
-	go srv.ConnectLoop()
-
-	for {
-	}
+	srv.ConnectLoop()
 }
 
 func handleTCP(l *net.TCPListener) {
