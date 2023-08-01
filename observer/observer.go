@@ -39,6 +39,8 @@ type service struct {
 }
 
 func main() {
+	flag.Parse()
+
 	c, err := grpc.Dial("https://logs.grpc.snoozethis.io")
 	if err != nil {
 		log.Fatalf("Failed to dial logs.grpc.snoozethis.io: %v", err)
