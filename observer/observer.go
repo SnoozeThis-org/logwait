@@ -35,6 +35,7 @@ type service struct {
 	connectedScanners         map[pb.ObserverService_CommunicateServer]struct{}
 	snoozeThisClient          pb.SnoozeThisLogServiceClient
 	snoozeThisClientStream    pb.SnoozeThisLogService_CommunicateClient
+	unconfirmedObservations   map[string]struct{}
 	initialObservablesFetched chan struct{}
 }
 
@@ -50,6 +51,7 @@ func main() {
 		activeObservables:         map[string]*pb.Observable{},
 		connectedScanners:         map[pb.ObserverService_CommunicateServer]struct{}{},
 		snoozeThisClient:          pb.NewSnoozeThisLogServiceClient(c),
+		unconfirmedObservations:   map[string]struct{}{},
 		initialObservablesFetched: make(chan struct{}),
 	}
 
@@ -101,10 +103,21 @@ func (s *service) talkToSnoozeThis() error {
 	if err != nil {
 		return err
 	}
+	s.mtx.Lock()
+	s.snoozeThisClientStream = stream
 	r := msg.GetMsg().(*pb.SnoozeThisToObserver_Register).Register
+	seen := map[string]struct{}{}
 	for _, o := range r.ActiveObservables {
-		s.addObservable(o)
+		s.addObservable_locked(o)
+		seen[o.GetId()] = struct{}{}
 	}
+	for id := range s.unconfirmedObservations {
+		if _, exists := seen[id]; !exists {
+			delete(s.unconfirmedObservations, id)
+		}
+	}
+	seen = nil
+	s.mtx.Unlock()
 
 	select {
 	case <-s.initialObservablesFetched:
@@ -119,7 +132,9 @@ func (s *service) talkToSnoozeThis() error {
 		}
 		switch m := msg.Msg.(type) {
 		case *pb.SnoozeThisToObserver_NewObservable:
-			s.addObservable(m.NewObservable)
+			s.mtx.Lock()
+			s.addObservable_locked(m.NewObservable)
+			s.mtx.Unlock()
 		case *pb.SnoozeThisToObserver_CancelObservable:
 			s.cancelObservable(m.CancelObservable)
 		default:
@@ -128,24 +143,29 @@ func (s *service) talkToSnoozeThis() error {
 	}
 }
 
-func (s *service) addObservable(o *pb.Observable) {
+func (s *service) addObservable_locked(o *pb.Observable) {
 	if msg := checkObservable(o); msg != "" {
-		s.mtx.Lock()
-		defer s.mtx.Unlock()
-		if err := s.snoozeThisClientStream.Send(&pb.ObserverToSnoozeThis{
+		// If this fails, we'll reconnect soon and SnoozeThis will send us the obstacle again and we'll reject it again.
+		_ = s.snoozeThisClientStream.Send(&pb.ObserverToSnoozeThis{
 			Msg: &pb.ObserverToSnoozeThis_RejectObservable{
 				RejectObservable: &pb.RejectObservable{
 					Id:      o.Id,
 					Message: msg,
 				},
 			},
-		}); err != nil {
-			panic(err) // XXX
-		}
+		})
 		return
 	}
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
+
+	if _, found := s.unconfirmedObservations[o.GetId()]; found {
+		_ = s.snoozeThisClientStream.Send(&pb.ObserverToSnoozeThis{
+			Msg: &pb.ObserverToSnoozeThis_ObservedObservable{
+				ObservedObservable: o.GetId(),
+			},
+		})
+		return
+	}
+
 	s.activeObservables[o.GetId()] = o
 	for scanner := range s.connectedScanners {
 		// If this fails, the Recv() will likely fail soon too and will disconnect this scanner.
@@ -161,6 +181,7 @@ func (s *service) cancelObservable(id string) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	delete(s.activeObservables, id)
+	delete(s.unconfirmedObservations, id)
 	for scanner := range s.connectedScanners {
 		// If this fails, the Recv() will likely fail soon too and will disconnect this scanner.
 		_ = scanner.Send(&pb.ObserverToScanner{
@@ -174,13 +195,15 @@ func (s *service) cancelObservable(id string) {
 func (s *service) observedObservable(id string) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	if err := s.snoozeThisClientStream.Send(&pb.ObserverToSnoozeThis{
+	s.unconfirmedObservations[id] = struct{}{}
+	if s.snoozeThisClientStream == nil {
+		return
+	}
+	_ = s.snoozeThisClientStream.Send(&pb.ObserverToSnoozeThis{
 		Msg: &pb.ObserverToSnoozeThis_ObservedObservable{
 			ObservedObservable: id,
 		},
-	}); err != nil {
-		panic(err) // XXX
-	}
+	})
 }
 
 func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error {
