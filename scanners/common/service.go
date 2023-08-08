@@ -112,6 +112,9 @@ func (s *Service) addObservable(o *pb.Observable) {
 
 	if ok {
 		if val.observed {
+			// The Observer just asked us to wait for this observable, but we've already seen it.
+			// That probably means our previous signal of that was lost and we should resend it.
+			// This is likely to occur during reconnection to the Observer when the Observer sends all active Observables again.
 			go s.notifyObserver(o.Id)
 		}
 		return
@@ -120,6 +123,7 @@ func (s *Service) addObservable(o *pb.Observable) {
 	val.observable = o
 	val.Regexps = make(map[string]*regexp.Regexp, len(o.Filters))
 	for _, f := range o.Filters {
+		// MustCompile is safe, the Observer has already validated the regexes.
 		val.Regexps[f.Field] = regexp.MustCompile(f.Regexp)
 	}
 
@@ -150,7 +154,8 @@ func (s *Service) notifyObserver(id string) {
 	if !o.observed {
 		return
 	}
-	s.observerStream.Send(&pb.ScannerToObserver{
+	// We ignore any error from Send(). The Recv() thread will soon notice the connection being gone too and will reconnect and then we'll retry sending this observation.
+	_ = s.observerStream.Send(&pb.ScannerToObserver{
 		Msg: &pb.ScannerToObserver_ObservedObservable{
 			ObservedObservable: id,
 		},
