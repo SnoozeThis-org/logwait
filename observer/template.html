@@ -47,18 +47,16 @@
 		</form>
 {{ if .URL }}
 		<script type="text/javascript">
-			var snoozeableUrl = '{{ .URL }}';
-			if(location.protocol == 'http:' && snoozeableUrl.startsWith('https://' + location.host + '/')) {
-				// We're returning an HTTPS, but we're currently on that page and it's plain old HTTP. Drop the 's' from the URL.
-				snoozeableUrl = snoozeableUrl.replace(/^https:/, 'http:');
-			}
 			const el = document.getElementById('snoozeableUrl');
-			el.value = snoozeableUrl;
+			if(location.protocol == 'http:' && el.value.startsWith('https://' + location.host + '/')) {
+				// We're returning an HTTPS, but we're currently on that page and it's plain old HTTP. Drop the 's' from the URL.
+				el.value = el.value.replace(/^https:/, 'http:');
+			}
 			if(navigator.clipboard) { // Usually requires HTTPS.
 				const span = document.createElement('span');
 				span.innerHTML = ' &#128203;';
 				span.onclick = function() {
-					navigator.clipboard.writeText(snoozeableUrl).then(function() {
+					navigator.clipboard.writeText(el.value).then(function() {
 						span.innerHTML = ' &check;';
 					}, function() {
 						thisspan.innerText = '';
