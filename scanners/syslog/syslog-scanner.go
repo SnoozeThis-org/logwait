@@ -41,7 +41,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Cannot connect to observer at %q: %v", *common.ObserverAddress, err)
 	}
-	defer c.Close()
 
 	srv = common.NewService(c)
 
@@ -103,8 +102,6 @@ func handleTCP(l *net.TCPListener) {
 }
 
 func handleUDP(l *net.UDPConn) {
-	defer l.Close()
-
 	var p syslog.Machine
 	if *fmt3164 {
 		p = rfc3164.NewParser(rfc3164.WithBestEffort())
@@ -127,8 +124,6 @@ func handleUDP(l *net.UDPConn) {
 }
 
 func handleUnix(c net.Conn) {
-	defer c.Close()
-
 	var p syslog.Machine
 	if *fmt3164 {
 		p = rfc3164.NewParser(rfc3164.WithBestEffort())
