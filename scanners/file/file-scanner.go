@@ -191,6 +191,7 @@ func (f *File) Tail() {
 	defer f.file.Close()
 
 	reader := bufio.NewReader(f.file)
+readLoop:
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -212,12 +213,12 @@ func (f *File) Tail() {
 				}
 
 				if f.useNotify {
-					select {
-					case <-f.HasData:
+					if _, ok := <-f.HasData; ok {
+						continue readLoop
 					}
-				} else {
-					time.Sleep(time.Second)
+					// The file was renamed, which closed the channel. We need to fall back to sleeping :(
 				}
+				time.Sleep(time.Second)
 				continue
 			}
 			return
@@ -244,7 +245,5 @@ func (f *File) IsRenamed() {
 	f.Name = ""
 
 	// We can no longer use notify because we don't know our new name
-	f.useNotify = false
-
-	f.HasData <- struct{}{}
+	close(f.HasData)
 }
