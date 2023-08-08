@@ -19,7 +19,8 @@ var (
 	listenUnix = flag.String("unix", "", "Path to Unix domain socket")
 	fmt3164    = flag.Bool("rfc3164", false, "Syslog messages confirm to RFC3164")
 	fmt5424    = flag.Bool("rfc5424", false, "Syslog messages confirm to RFC5424")
-	srv        *common.Service
+
+	srv *common.Service
 )
 
 func main() {
