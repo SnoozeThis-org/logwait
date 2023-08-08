@@ -136,6 +136,11 @@ func (s *Service) addObservable(o *pb.Observable) {
 func (s *Service) cancelObservable(id string) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
+	if len(s.observables) == 0 {
+		// Avoid calling StopObserving below if we got a cancel for a non-existent id and were already stopped.
+		return
+	}
+
 	delete(s.observables, id)
 
 	if s.StopObserving != nil && len(s.observables) == 0 {
