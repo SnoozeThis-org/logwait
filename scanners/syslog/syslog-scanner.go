@@ -45,11 +45,15 @@ func main() {
 	srv = common.NewService(c)
 
 	if *listenTCP != "" {
-		l, err := net.Listen("tcp", *listenTCP)
+		tcpAddr, err := net.ResolveTCPAddr("tcp", *listenTCP)
+		if err != nil {
+			log.Fatalf("Invalid TCP port %v: %v", *listenTCP, err)
+		}
+		l, err := net.ListenTCP("tcp", tcpAddr)
 		if err != nil {
 			log.Fatalf("Cannot open TCP port %v: %v", *listenTCP, err)
 		}
-		go handleTCP(l.(*net.TCPListener))
+		go handleTCP(l)
 	}
 
 	if *listenUDP != "" {
