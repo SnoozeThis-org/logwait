@@ -12,7 +12,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"regexp"
 	"sort"
 	"sync"
 	"time"
@@ -38,6 +37,7 @@ type service struct {
 	snoozeThisClient          pb.SnoozeThisLogServiceClient
 	snoozeThisClientStream    pb.SnoozeThisLogService_CommunicateClient
 	unconfirmedObservations   map[string]struct{}
+	reportedRejections        map[string]struct{}
 	initialObservablesFetched chan struct{}
 	registeredUrl             string
 }
@@ -57,6 +57,7 @@ func main() {
 		connectedScanners:         map[pb.ObserverService_CommunicateServer]struct{}{},
 		snoozeThisClient:          pb.NewSnoozeThisLogServiceClient(c),
 		unconfirmedObservations:   map[string]struct{}{},
+		reportedRejections:        map[string]struct{}{},
 		initialObservablesFetched: make(chan struct{}),
 	}
 
@@ -111,6 +112,7 @@ func (s *service) talkToSnoozeThis() error {
 	}
 	s.mtx.Lock()
 	s.snoozeThisClientStream = stream
+	s.reportedRejections = map[string]struct{}{}
 	r := msg.GetMsg().(*pb.SnoozeThisToObserver_Register).Register
 	s.registeredUrl = r.GetRegisteredUrl()
 	seen := map[string]struct{}{}
@@ -189,6 +191,7 @@ func (s *service) cancelObservable(id string) {
 	defer s.mtx.Unlock()
 	delete(s.activeObservables, id)
 	delete(s.unconfirmedObservations, id)
+	delete(s.reportedRejections, id)
 	for scanner := range s.connectedScanners {
 		// If this fails, the Recv() will likely fail soon too and will disconnect this scanner.
 		_ = scanner.Send(&pb.ObserverToScanner{
@@ -211,6 +214,26 @@ func (s *service) observedObservable(id string) {
 			ObservedObservable: id,
 		},
 	})
+}
+
+func (s *service) rejectObservable(r *pb.RejectObservable) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+	if s.snoozeThisClientStream == nil {
+		return
+	}
+	_, reported := s.reportedRejections[r.GetId()]
+	if reported {
+		// Avoid all scanners sending this message to SnoozeThis.
+		return
+	}
+	if s.snoozeThisClientStream.Send(&pb.ObserverToSnoozeThis{
+		Msg: &pb.ObserverToSnoozeThis_RejectObservable{
+			RejectObservable: r,
+		},
+	}) == nil {
+		s.reportedRejections[r.GetId()] = struct{}{}
+	}
 }
 
 func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error {
@@ -253,6 +276,8 @@ func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error
 		switch m := msg.Msg.(type) {
 		case *pb.ScannerToObserver_ObservedObservable:
 			s.observedObservable(m.ObservedObservable)
+		case *pb.ScannerToObserver_RejectObservable:
+			s.rejectObservable(m.RejectObservable)
 		default:
 			return fmt.Errorf("unexpected %T from Scanner", msg.Msg)
 		}
@@ -262,11 +287,6 @@ func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error
 func checkObservable(o *pb.Observable) string {
 	if !checkSignature(o) {
 		return "signature is invalid"
-	}
-	for _, f := range o.Filters {
-		if _, err := regexp.Compile(f.GetRegexp()); err != nil {
-			return "regexp was invalid"
-		}
 	}
 	return ""
 }

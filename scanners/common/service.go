@@ -131,8 +131,12 @@ func (s *Service) addObservable(o *pb.Observable) {
 	val.observable = o
 	val.Regexps = make(map[string]*regexp.Regexp, len(o.Filters))
 	for _, f := range o.Filters {
-		// MustCompile is safe, the Observer has already validated the regexes.
-		val.Regexps[f.Field] = regexp.MustCompile(f.Regexp)
+		re, err := regexp.Compile(f.Regexp)
+		if err != nil {
+			s.sendRejection(o.Id, err.Error())
+			return
+		}
+		val.Regexps[f.Field] = re
 	}
 
 	if s.StartObserving != nil && len(s.observables) == 0 {
@@ -171,6 +175,18 @@ func (s *Service) notifyObserver(id string) {
 	_ = s.observerStream.Send(&pb.ScannerToObserver{
 		Msg: &pb.ScannerToObserver_ObservedObservable{
 			ObservedObservable: id,
+		},
+	})
+}
+
+func (s *Service) sendRejection(id, msg string) {
+	// We ignore any error from Send(). The Recv() thread will soon notice the connection being gone too and will reconnect and then we'll retry sending this observation.
+	_ = s.observerStream.Send(&pb.ScannerToObserver{
+		Msg: &pb.ScannerToObserver_RejectObservable{
+			RejectObservable: &pb.RejectObservable{
+				Id:      id,
+				Message: msg,
+			},
 		},
 	})
 }
