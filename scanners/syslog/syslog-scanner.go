@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"net"
+	"time"
 
 	"github.com/SnoozeThis-org/logwait/scanners/common"
 	syslog "github.com/influxdata/go-syslog/v3"
@@ -80,12 +81,11 @@ func main() {
 }
 
 func handleTCP(l *net.TCPListener) {
-	defer l.Close()
-
 	for {
 		conn, err := l.AcceptTCP()
 		if err != nil {
-			return
+			time.Sleep(time.Second)
+			continue
 		}
 
 		defer conn.Close()
