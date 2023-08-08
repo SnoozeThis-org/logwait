@@ -190,6 +190,7 @@ func TailFile(filename string, useNotify bool) error {
 func (f *File) Tail() {
 	defer f.file.Close()
 
+	var partialLine string
 	reader := bufio.NewReader(f.file)
 readLoop:
 	for {
@@ -211,6 +212,7 @@ readLoop:
 						}
 					}
 				}
+				partialLine += line
 
 				if f.useNotify {
 					if _, ok := <-f.HasData; ok {
@@ -224,6 +226,10 @@ readLoop:
 			return
 		}
 
+		if partialLine != "" {
+			line = partialLine + line
+			partialLine = ""
+		}
 		srv.MatchObservables(func(o common.Observable) bool {
 			for field, regexp := range o.Regexps {
 				switch field {
