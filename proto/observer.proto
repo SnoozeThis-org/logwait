@@ -16,6 +16,9 @@ message RegisterObserverRequest {
 
 message RegisterObserverResponse {
 	repeated Observable active_observables = 1;
+
+	// The url you've registered with SnoozeThis. The Observer should use this URL as the base for filter-URLs to ensure the domain is understood by SnoozeThis.
+	string registered_url = 2;
 }
 
 message RejectObservable {
