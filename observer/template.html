@@ -8,6 +8,9 @@
 			#snoozeableUrl {
 				min-width: 90%;
 			}
+			div {
+				padding-bottom: 5px;
+			}
 		</style>
 		<script type="text/javascript">
 			function addRow() {
@@ -31,14 +34,14 @@
 		</script>
 	</head>
 	<body>
-		<b>Configure the filters for a log line you want to wait for.</b>
+		<div><b>Configure the filters for a log line you want to wait for.</b></div>
 
 {{ range .Warnings }}
 		<div style="color: red">{{.}}</div>
 {{ end }}
 
 {{ if .URL }}
-<div><input id="snoozeableUrl" value="{{.URL}}" /></div>
+		<div><input id="snoozeableUrl" value="{{.URL}}" /></div>
 {{ end }}
 
 		<form method="GET">

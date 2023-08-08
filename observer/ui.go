@@ -50,6 +50,19 @@ func (s *service) handleHttp(ctx context.Context, req *http.Request) convreq.Htt
 			v.Errors[f] = err.Error()
 		}
 	}
+
+	s.mtx.Lock()
+	base := s.registeredUrl
+	numScanners := len(s.connectedScanners)
+	s.mtx.Unlock()
+	if base == "" {
+		v.Warnings = append(v.Warnings, "We haven't been connected to SnoozeThis since startup yet and don't know the registered domain name yet. Making a guess that it is "+req.Host)
+		base = "https://" + req.Host + "/"
+	}
+	if numScanners == 0 {
+		v.Warnings = append(v.Warnings, "There are currently no scanners connected, so we aren't seeing any log lines at all.")
+	}
+
 	if len(v.Errors) == 0 && len(v.Values) > 0 {
 		o := &pb.Observable{}
 		for f, r := range v.Values {
@@ -59,13 +72,6 @@ func (s *service) handleHttp(ctx context.Context, req *http.Request) convreq.Htt
 			})
 		}
 		o.Signature = calculateSignature(o)
-		s.mtx.Lock()
-		base := s.registeredUrl
-		s.mtx.Unlock()
-		if base == "" {
-			v.Warnings = append(v.Warnings, "We haven't been connected to SnoozeThis since startup yet and don't know the registered domain name yet. Making a guess that it is "+req.Host)
-			base = "https://" + req.Host + "/"
-		}
 		req.Form.Set("snooze_signature", o.Signature)
 		v.URL = base + "?" + req.Form.Encode()
 	}
