@@ -28,7 +28,7 @@ func main() {
 	}
 	defer c.Close()
 
-	srv = common.NewService(c)
+	srv = common.NewService(c, "stdin-scanner")
 	if *readJson {
 		go jsonConsumer()
 	} else {

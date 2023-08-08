@@ -42,7 +42,7 @@ func main() {
 		log.Fatalf("Cannot connect to observer at %q: %v", *common.ObserverAddress, err)
 	}
 
-	srv = common.NewService(c)
+	srv = common.NewService(c, "syslog-scanner")
 
 	if *listenTCP != "" {
 		tcpAddr, err := net.ResolveTCPAddr("tcp", *listenTCP)

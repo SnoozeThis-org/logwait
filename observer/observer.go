@@ -34,6 +34,7 @@ type service struct {
 	mtx                       sync.Mutex
 	activeObservables         map[string]*pb.Observable
 	connectedScanners         map[pb.ObserverService_CommunicateServer]struct{}
+	scannerType               string
 	snoozeThisClient          pb.SnoozeThisLogServiceClient
 	snoozeThisClientStream    pb.SnoozeThisLogService_CommunicateClient
 	unconfirmedObservations   map[string]struct{}
@@ -241,7 +242,7 @@ func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error
 	if err != nil {
 		return err
 	}
-	_, ok := msg.GetMsg().(*pb.ScannerToObserver_Register)
+	r, ok := msg.GetMsg().(*pb.ScannerToObserver_Register)
 	if !ok {
 		return errors.New("first message from Scanner to observer should be Register")
 	}
@@ -249,6 +250,14 @@ func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error
 	<-s.initialObservablesFetched
 
 	s.mtx.Lock()
+	if len(s.connectedScanners) == 0 {
+		s.scannerType = r.Register.GetScannerType()
+	}
+	if s.scannerType != r.Register.GetScannerType() {
+		others := s.scannerType
+		s.mtx.Unlock()
+		return fmt.Errorf("All scanners should be the same type. The other scanners are of type %q but you are a %q.", others, r.Register.GetScannerType())
+	}
 	s.connectedScanners[stream] = struct{}{}
 	observables := maps.Values(s.activeObservables)
 	s.mtx.Unlock()

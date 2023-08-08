@@ -26,6 +26,7 @@ type Observable struct {
 type Service struct {
 	StartObserving             func()
 	StopObserving              func()
+	scannerType                string
 	mtx                        sync.Mutex
 	observables                map[string]Observable
 	observerClient             pb.ObserverServiceClient
@@ -33,8 +34,9 @@ type Service struct {
 	receivedInitialObservables chan struct{}
 }
 
-func NewService(c *grpc.ClientConn) *Service {
+func NewService(c *grpc.ClientConn, scannerType string) *Service {
 	return &Service{
+		scannerType:                scannerType,
 		observerClient:             pb.NewObserverServiceClient(c),
 		observables:                map[string]Observable{},
 		receivedInitialObservables: make(chan struct{}),
@@ -75,7 +77,9 @@ func (s *Service) connectToObserver() error {
 	}
 	if err := stream.Send(&pb.ScannerToObserver{
 		Msg: &pb.ScannerToObserver_Register{
-			Register: &pb.RegisterScannerRequest{},
+			Register: &pb.RegisterScannerRequest{
+				ScannerType: s.scannerType,
+			},
 		},
 	}); err != nil {
 		return err

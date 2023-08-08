@@ -115,7 +115,7 @@ func main() {
 		}()
 	}
 
-	srv = common.NewService(c)
+	srv = common.NewService(c, "file-scanner")
 	srv.StartObserving = func() {
 		for filename, _ := range filesToWatch {
 			TailFile(filename, watcher != nil)

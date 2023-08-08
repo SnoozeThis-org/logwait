@@ -11,6 +11,8 @@ service ObserverService {
 }
 
 message RegisterScannerRequest {
+	// All scanners to one observer should be the same binary, for example so that they all understand the same filters. This is enforced by them needing to send their type (e.g. "syslog") to the observer which checks they're all the same.
+	string scanner_type = 1;
 }
 
 message RegisterScannerResponse {
