@@ -9,6 +9,26 @@
 				min-width: 90%;
 			}
 		</style>
+		<script type="text/javascript">
+			function addRow() {
+				const valueinput = document.createElement('input');
+				valueinput.type = "text";
+				const newRow = document.createElement('tr');
+				const fieldcol = document.createElement('td');
+				const fieldinput = document.createElement('input');
+				fieldinput.type = "text";
+				fieldinput.onchange = function () {
+					valueinput.name = fieldinput.value;
+				}
+				fieldcol.appendChild(fieldinput);
+				const valuecol = document.createElement('td');
+				valuecol.appendChild(valueinput);
+				newRow.appendChild(fieldcol);
+				newRow.appendChild(valuecol);
+				const addrow = document.getElementById('addrow');
+				addrow.parentNode.insertBefore(newRow, addrow);
+			}
+		</script>
 	</head>
 	<body>
 		<b>Configure the filters for a log line you want to wait for.</b>
@@ -38,6 +58,10 @@
 						<td style="color: red">{{ index $root.Errors $field }}</td>
 					</tr>
 {{ end }}
+					<tr id="addrow">
+						<td><input type="button" value="+" onclick="addRow()" /></td>
+						<td></td>
+					</tr>
 					<tr>
 						<td></td>
 						<td><input type="submit" value="Create filter" /></td>
