@@ -14,6 +14,7 @@ import (
 
 	"github.com/SnoozeThis-org/logwait/scanners/common"
 	"github.com/fsnotify/fsnotify"
+	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 )
 
@@ -142,7 +143,7 @@ func main() {
 		go func() {
 			for {
 				time.Sleep(5 * time.Second)
-				unwatched := filesToWatch
+				unwatched := maps.Clone(filesToWatch)
 				mut.Lock()
 				for _, f := range files {
 					if f.Name != "" {
