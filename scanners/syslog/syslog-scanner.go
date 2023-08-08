@@ -87,17 +87,18 @@ func handleTCP(l *net.TCPListener) {
 			continue
 		}
 
-		defer conn.Close()
+		go func() {
+			defer conn.Close()
 
-		acc := func(res *syslog.Result) {
-			if res.Error != nil {
-				log.Printf("Failed to parse log message: %v", err)
-				return
+			acc := func(res *syslog.Result) {
+				if res.Error != nil {
+					log.Printf("Failed to parse log message: %v", err)
+					return
+				}
+				newMessage(res.Message)
 			}
-			newMessage(res.Message)
-		}
-
-		go octetcounting.NewParser(syslog.WithBestEffort(), syslog.WithListener(acc)).Parse(conn)
+			octetcounting.NewParser(syslog.WithBestEffort(), syslog.WithListener(acc)).Parse(conn)
+		}()
 	}
 }
 
