@@ -33,11 +33,10 @@ type Service struct {
 }
 
 func NewService(c *grpc.ClientConn) *Service {
-	srv := Service{
+	return &Service{
 		observerClient: pb.NewObserverServiceClient(c),
 		observables:    map[string]Observable{},
 	}
-	return &srv
 }
 
 func (s *Service) ConnectLoop() {
