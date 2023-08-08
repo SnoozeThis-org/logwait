@@ -21,6 +21,7 @@ message ScannerToObserver {
 	oneof msg {
 		RegisterScannerRequest register = 1;
 		string observed_observable = 2;
+		RejectObservable reject_observable = 3;
 	}
 }
 

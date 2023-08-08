@@ -21,11 +21,6 @@ message RegisterObserverResponse {
 	string registered_url = 2;
 }
 
-message RejectObservable {
-	string id = 1;
-	string message = 2;
-}
-
 message ObserverToSnoozeThis {
 	oneof msg {
 		RegisterObserverRequest register = 1;

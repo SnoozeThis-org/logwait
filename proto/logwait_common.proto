@@ -14,3 +14,8 @@ message Observable {
 	string signature = 2;
 	repeated Filter filters = 3;
 }
+
+message RejectObservable {
+	string id = 1;
+	string message = 2;
+}
