@@ -24,18 +24,20 @@ type Observable struct {
 }
 
 type Service struct {
-	StartObserving func()
-	StopObserving  func()
-	mtx            sync.Mutex
-	observables    map[string]Observable
-	observerClient pb.ObserverServiceClient
-	observerStream pb.ObserverService_CommunicateClient
+	StartObserving             func()
+	StopObserving              func()
+	mtx                        sync.Mutex
+	observables                map[string]Observable
+	observerClient             pb.ObserverServiceClient
+	observerStream             pb.ObserverService_CommunicateClient
+	receivedInitialObservables chan struct{}
 }
 
 func NewService(c *grpc.ClientConn) *Service {
 	return &Service{
-		observerClient: pb.NewObserverServiceClient(c),
-		observables:    map[string]Observable{},
+		observerClient:             pb.NewObserverServiceClient(c),
+		observables:                map[string]Observable{},
+		receivedInitialObservables: make(chan struct{}),
 	}
 }
 
@@ -87,6 +89,12 @@ func (s *Service) connectToObserver() error {
 	r := msg.GetMsg().(*pb.ObserverToScanner_Register).Register
 	for _, o := range r.ActiveObservables {
 		s.addObservable(o)
+	}
+
+	select {
+	case <-s.receivedInitialObservables:
+	default:
+		close(s.receivedInitialObservables)
 	}
 
 	for {
@@ -165,4 +173,10 @@ func (s *Service) notifyObserver(id string) {
 			ObservedObservable: id,
 		},
 	})
+}
+
+// WaitForInitialConnection waits the filters to be received from the Observer.
+// This ensures that existing Observables don't miss any logs even if the scanner otherwise keeps track of its log position.
+func (s *Service) WaitForInitialConnection() {
+	<-s.receivedInitialObservables
 }
