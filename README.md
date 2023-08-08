@@ -3,18 +3,18 @@ logwait integrates your logging system with [SnoozeThis](https://www.snoozethis.
 
 A common scenario would be: you get assigned an bug report for one of your applications but find it difficult to reproduce. You add additional logging that would help you if the issue reoccurs. You then create a filter looking for a specific log message and hand over the issue to SnoozeThis, who will start monitoring your log files. As soon as a match has been found, SnoozeThis will assign the issue back to you, so you can start fixing the bug.
 
-logwait consists of two parts: an observer and one or more scanners. Both run locally, so no log messages will ever leave your environment.
+logwait consists of two parts: an observer and one or more scanners. Both run locally, so no log messages will ever leave your servers.
 
 # Observer
 The observer serves a simple web interface where you can create new observables using filters. The web interface will give you a URL which you can use to snooze an issue in your issue tracker by simply commenting <code>@SnoozeThis url</code>.
-When a scanner (see below) detects a log message matching your filters, the observer will ping SnoozeThis, who in turn will reassing the issue back to you.
+When a scanner (see below) detects a log message matching your filters, the observer will ping SnoozeThis, which in turn will reassign the issue back to you.
 
 In order to use the observer you will need to create a token on our website. This token is linked to your SnoozeThis account (user or organization) and will make sure only you (or your coworkers) can setup snoozes for your logging application.
 
 # Scanner(s)
 A scanner is a simple program that digests log messages and scans these messages for the observables defined in the observer. We have scanners for syslog and tailing (text) log files, with more to come.
 
-You can start as many scanners as you need and they can run on different hosts than the observer. The scanner connects to the observer using GRPC (by default on tcp port 1600).
+You can start as many scanners as you need and they can run on different hosts than the observer. The scanner connects to the observer using gRPC (by default on tcp port 1600).
 
 # Creating your own scanner
 If you have a need for a specific scanner for your logging application feel free to create an issue. You can also create your own scanner. Have a look at one of the existing scanners or start using this Go code:
@@ -32,7 +32,7 @@ import (
 func main() {
 	flag.Parse()
 
-  // Connect to the observer
+	// Connect to the observer
 	c, err := grpc.Dial(*common.ObserverAddress, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Cannot connect to observer at %q: %v", *common.ObserverAddress, err)
@@ -58,11 +58,19 @@ func main() {
 					return false
 				}
 			}
-      // Tell the observer a match has been found
+			// Tell the observer a match has been found
 			return true
 		})
 	}
 }
 ```
 
-The scanner communicates with the observer using streaming GRPC. If you prefer a different programming language for your scanner, have a look at the [proto](https://github.com/SnoozeThis-org/logwait/blob/master/proto/scanner.proto) file.
+The scanner communicates with the observer using streaming gRPC. If you prefer a different programming language for your scanner, have a look at the [proto](https://github.com/SnoozeThis-org/logwait/blob/master/proto/scanner.proto) file.
+
+# Security
+
+We understand you are careful about your log lines. Surely *your company* isn't logging plain-text passwords, but it's still better to keep your logs secure. We have the following security principles to ensure no data leaks can happen based on your usage of logwait (and SnoozeThis).
+
+1. No log line ever leaves your servers. The Scanner just tells the Observer "there was a match", which the observer relays to SnoozeThis.
+2. Filters can only be created by people able to access your Observer webinterface. SnoozeThis tells your Observer which filters are active, but when your Observer created the URL for them, it signed them with an HMAC. Because of this SnoozeThis employees can't prod around your log lines by trying different filters, because they wouldn't have been signed by your Observer.
+3. The URL created by the Observer to snooze on *does* contain all the filters, because it's convenient for your colleagues to see what exactly you're snoozing on.
