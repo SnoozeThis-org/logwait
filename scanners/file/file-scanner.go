@@ -52,11 +52,11 @@ func main() {
 	defer c.Close()
 
 	filesToWatch := make(map[string]struct{}, flag.NArg())
-	for i := 0; i < flag.NArg(); i++ {
-		if _, err := os.Stat(flag.Arg(i)); errors.Is(err, os.ErrNotExist) {
-			log.Fatalf("failed to stat %q", flag.Arg(i))
+	for _, fn := range flag.Args() {
+		if _, err := os.Stat(fn); errors.Is(err, os.ErrNotExist) {
+			log.Fatalf("failed to stat %q", fn)
 		}
-		filesToWatch[flag.Arg(i)] = struct{}{}
+		filesToWatch[fn] = struct{}{}
 	}
 
 	watcher, err := fsnotify.NewWatcher()
