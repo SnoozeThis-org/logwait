@@ -4,7 +4,7 @@ package com.snoozethis.logwait;
 
 option go_package = "github.com/SnoozeThis-org/logwait";
 
-import "common.proto";
+import "logwait_common.proto";
 
 service SnoozeThisLogService {
 	rpc Communicate(stream ObserverToSnoozeThis) returns (stream SnoozeThisToObserver) {}
