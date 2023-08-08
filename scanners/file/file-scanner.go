@@ -169,7 +169,7 @@ func TailFile(filename string, useNotify bool) error {
 		return err
 	}
 
-	f := File{
+	f := &File{
 		Name:         filename,
 		OriginalName: filename,
 		Stop:         make(chan struct{}),
@@ -180,7 +180,7 @@ func TailFile(filename string, useNotify bool) error {
 		f.HasData = make(chan struct{})
 	}
 	mut.Lock()
-	files = append(files, &f)
+	files = append(files, f)
 	mut.Unlock()
 
 	go f.Tail()
