@@ -160,9 +160,7 @@ func main() {
 		}()
 	}
 
-	go srv.ConnectLoop()
-
-	select {}
+	srv.ConnectLoop()
 }
 
 func TailFile(filename string, useNotify bool) error {
