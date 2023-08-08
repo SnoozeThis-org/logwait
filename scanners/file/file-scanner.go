@@ -216,7 +216,7 @@ func (f *File) Tail() {
 					case <-f.HasData:
 					}
 				} else {
-					time.Sleep(200 * time.Millisecond)
+					time.Sleep(time.Second)
 				}
 				continue
 			}
