@@ -20,6 +20,8 @@ import (
 	pb "github.com/SnoozeThis-org/logwait/proto"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -42,7 +44,9 @@ type service struct {
 func main() {
 	flag.Parse()
 
-	c, err := grpc.Dial("https://logs.grpc.snoozethis.io")
+	c, err := grpc.Dial("logs.grpc.conquistador.snoozethis.com:443", grpc.WithTransportCredentials(credentials.NewTLS(nil)), grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time: time.Minute,
+	}))
 	if err != nil {
 		log.Fatalf("Failed to dial logs.grpc.snoozethis.io: %v", err)
 	}
