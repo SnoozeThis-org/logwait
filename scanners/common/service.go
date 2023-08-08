@@ -137,7 +137,7 @@ func (s *Service) addObservable(o *pb.Observable) {
 	for _, f := range o.Filters {
 		re, err := regexp.Compile(f.Regexp)
 		if err != nil {
-			s.sendRejection(o.Id, err.Error())
+			s.sendRejection(o.Id, "invalid regexp for field "+f.Field+": "+err.Error())
 			return
 		}
 		val.Regexps[f.Field] = re
