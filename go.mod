@@ -3,6 +3,7 @@ module github.com/SnoozeThis-org/logwait
 go 1.18
 
 require (
+	github.com/Jille/convreq v1.6.1-0.20230808184511-45e4d7abdccd
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
 	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
@@ -12,6 +13,8 @@ require (
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/gorilla/schema v1.2.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect

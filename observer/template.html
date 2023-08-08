@@ -1,0 +1,72 @@
+{{ $root := . }}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>SnoozeThis logwait</title>
+		<link rel="icon" href="https://www.snoozethis.com/favicon.ico" />
+		<style type="text/css">
+			#snoozeableUrl {
+				min-width: 90%;
+			}
+		</style>
+	</head>
+	<body>
+		<b>Configure the filters for a log line you want to wait for.</b>
+
+{{ range .Warnings }}
+		<div style="color: red">{{.}}</div>
+{{ end }}
+
+{{ if .URL }}
+<div><input id="snoozeableUrl" value="{{.URL}}" /></div>
+{{ end }}
+
+		<form method="GET">
+			<table>
+				<thead>
+					<tr>
+						<th>Field</th>
+						<th>Regex</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+{{ range $index, $field := .Fields }}
+					<tr>
+						<td><label for="f{{ $index }}">{{ $field }}</label></td>
+						<td><input type="text" name="{{ $field }}" id="f{{ $index }}" value="{{ index $root.Values $field }}" /></td>
+						<td style="color: red">{{ index $root.Errors $field }}</td>
+					</tr>
+{{ end }}
+					<tr>
+						<td></td>
+						<td><input type="submit" value="Create filter" /></td>
+					</tr>
+				</tbody>
+			</table>
+		</form>
+{{ if .URL }}
+		<script type="text/javascript">
+			var snoozeableUrl = '{{ .URL }}';
+			if(location.protocol == 'http:' && snoozeableUrl.startsWith('https://' + location.host + '/')) {
+				// We're returning an HTTPS, but we're currently on that page and it's plain old HTTP. Drop the 's' from the URL.
+				snoozeableUrl = snoozeableUrl.replace(/^https:/, 'http:');
+			}
+			const el = document.getElementById('snoozeableUrl');
+			el.value = snoozeableUrl;
+			if(navigator.clipboard) { // Usually requires HTTPS.
+				const span = document.createElement('span');
+				span.innerHTML = ' &#128203;';
+				span.onclick = function() {
+					navigator.clipboard.writeText(snoozeableUrl).then(function() {
+						span.innerHTML = ' &check;';
+					}, function() {
+						thisspan.innerText = '';
+					})
+				};
+				el.parentNode.appendChild(span);
+			}
+		</script>
+{{ end }}
+	</body>
+</html>

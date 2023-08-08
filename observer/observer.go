@@ -39,6 +39,7 @@ type service struct {
 	snoozeThisClientStream    pb.SnoozeThisLogService_CommunicateClient
 	unconfirmedObservations   map[string]struct{}
 	initialObservablesFetched chan struct{}
+	registeredUrl             string
 }
 
 func main() {
@@ -74,6 +75,7 @@ func main() {
 		}
 	}()
 
+	srv.registerUI()
 	log.Fatalf("HTTP server died: %v", http.ListenAndServe(fmt.Sprintf(":%d", *httpPort), nil))
 }
 
@@ -110,6 +112,7 @@ func (s *service) talkToSnoozeThis() error {
 	s.mtx.Lock()
 	s.snoozeThisClientStream = stream
 	r := msg.GetMsg().(*pb.SnoozeThisToObserver_Register).Register
+	s.registeredUrl = r.GetRegisteredUrl()
 	seen := map[string]struct{}{}
 	for _, o := range r.ActiveObservables {
 		s.addObservable_locked(o)
