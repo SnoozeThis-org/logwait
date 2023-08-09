@@ -148,7 +148,7 @@ func (s *service) talkToSnoozeThis() error {
 		case *pb.SnoozeThisToObserver_CancelObservable:
 			s.cancelObservable(m.CancelObservable)
 		default:
-			return fmt.Errorf("unexpected %T from Scanner", msg.Msg)
+			return fmt.Errorf("unexpected %T from SnoozeThis", msg.Msg)
 		}
 	}
 }
