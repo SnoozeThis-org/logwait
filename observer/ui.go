@@ -85,8 +85,10 @@ func (s *service) handleHttp(ctx context.Context, req *http.Request) convreq.Htt
 		v.Warnings = append(v.Warnings, "There are currently no scanners connected, so we aren't seeing any log lines at all.")
 	}
 	if len(v.Values) > 0 && !hasErrors {
-		o.Signature = calculateSignature(o)
-		req.Form.Set("snooze_signature", o.Signature)
+		if *signingKey != "" {
+			o.Signature = calculateSignature(o)
+			req.Form.Set("snooze_signature", o.Signature)
+		}
 		v.URL = base + "?" + req.Form.Encode()
 	}
 	return respond.RenderTemplate(tpl, v)

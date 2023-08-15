@@ -6,16 +6,17 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/SnoozeThis-org/logwait/config"
 	pb "github.com/SnoozeThis-org/logwait/proto"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
@@ -25,9 +26,12 @@ import (
 )
 
 var (
-	httpPort   = flag.Int("http-port", 8080, "Port to serve HTTP interface on")
-	grpcPort   = flag.Int("grpc-port", 1600, "Port to serve gRPC for the Scanners on")
-	signingKey = flag.String("signing-key", "secret", "Secret to sign your filters with")
+	// These settings can also passed through environment variables, e.g. SIGNING_KEY.
+	httpPort       = config.FlagSet.Int("http-port", 8080, "Port to serve HTTP interface on")
+	grpcPort       = config.FlagSet.Int("grpc-port", 1600, "Port to serve gRPC for the Scanners on")
+	signingKey     = config.FlagSet.String("signing-key", "", "Secret to sign your filters with")
+	allowUnsigned  = config.FlagSet.Bool("allow-unsigned", false, "Whether a signing key is required")
+	snoozethisAddr = config.FlagSet.String("snoozethis-addr", "logs.grpc.snoozethis.com:443", "gRPC address of the SnoozeThisLogService")
 )
 
 type service struct {
@@ -46,13 +50,18 @@ type service struct {
 }
 
 func main() {
-	flag.Parse()
+	config.Parse()
 
-	c, err := grpc.Dial("logs.grpc.conquistador.snoozethis.com:443", grpc.WithTransportCredentials(credentials.NewTLS(nil)), grpc.WithKeepaliveParams(keepalive.ClientParameters{
+	if *signingKey == "" && !*allowUnsigned {
+		fmt.Fprintln(os.Stderr, "A signing key is required for optimal security. You can waive your security by using --allow-unsigned")
+		os.Exit(2)
+	}
+
+	c, err := grpc.Dial(*snoozethisAddr, grpc.WithTransportCredentials(credentials.NewTLS(nil)), grpc.WithKeepaliveParams(keepalive.ClientParameters{
 		Time: time.Minute,
 	}))
 	if err != nil {
-		log.Fatalf("Failed to dial logs.grpc.snoozethis.io: %v", err)
+		log.Fatalf("Failed to dial %s: %v", *snoozethisAddr, err)
 	}
 
 	srv := &service{
@@ -306,6 +315,9 @@ func checkObservable(o *pb.Observable) string {
 }
 
 func checkSignature(o *pb.Observable) bool {
+	if *allowUnsigned {
+		return true
+	}
 	expected := calculateSignature(o)
 	return hmac.Equal([]byte(expected), []byte(o.GetSignature()))
 }
