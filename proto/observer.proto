@@ -12,6 +12,9 @@ service SnoozeThisLogService {
 
 message RegisterObserverRequest {
 	string log_instance_token = 1;
+
+	// Send a version number so we can see how far we need to maintain backwards compatibility.
+	int32 observer_protocol_version = 2;
 }
 
 message RegisterObserverResponse {

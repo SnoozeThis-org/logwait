@@ -20,15 +20,18 @@ import (
 	pb "github.com/SnoozeThis-org/logwait/proto"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	// These settings can also passed through environment variables, e.g. SIGNING_KEY.
 	httpPort       = config.FlagSet.Int("http-port", 8080, "Port to serve HTTP interface on")
 	grpcPort       = config.FlagSet.Int("grpc-port", 1600, "Port to serve gRPC for the Scanners on")
+	token          = config.FlagSet.String("token", "", "The token you got when registering at https://www.snoozethis.com/logs/")
 	signingKey     = config.FlagSet.String("signing-key", "", "Secret to sign your filters with")
 	allowUnsigned  = config.FlagSet.Bool("allow-unsigned", false, "Whether a signing key is required")
 	snoozethisAddr = config.FlagSet.String("snoozethis-addr", "logs.grpc.snoozethis.com:443", "gRPC address of the SnoozeThisLogService")
@@ -52,6 +55,10 @@ type service struct {
 func main() {
 	config.Parse()
 
+	if *token == "" {
+		fmt.Fprintln(os.Stderr, "The token is required (--token or the env var TOKEN). Get one at https://www.snoozethis.com/logs/")
+		os.Exit(2)
+	}
 	if *signingKey == "" && !*allowUnsigned {
 		fmt.Fprintln(os.Stderr, "A signing key is required for optimal security. You can waive your security by using --allow-unsigned")
 		os.Exit(2)
@@ -113,7 +120,8 @@ func (s *service) talkToSnoozeThis() error {
 	if err := stream.Send(&pb.ObserverToSnoozeThis{
 		Msg: &pb.ObserverToSnoozeThis_Register{
 			Register: &pb.RegisterObserverRequest{
-				LogInstanceToken: "secret",
+				LogInstanceToken:        *token,
+				ObserverProtocolVersion: 20230815,
 			},
 		},
 	}); err != nil {
@@ -121,6 +129,9 @@ func (s *service) talkToSnoozeThis() error {
 	}
 	msg, err := stream.Recv()
 	if err != nil {
+		if status.Code(err) == codes.PermissionDenied {
+			log.Fatalf("Your token was rejected")
+		}
 		return err
 	}
 	s.mtx.Lock()
@@ -160,7 +171,7 @@ func (s *service) talkToSnoozeThis() error {
 		case *pb.SnoozeThisToObserver_CancelObservable:
 			s.cancelObservable(m.CancelObservable)
 		default:
-			return fmt.Errorf("unexpected %T from SnoozeThis", msg.Msg)
+			// A message we don't know. Most likely a new protocol addition. Let's ignore it.
 		}
 	}
 }
