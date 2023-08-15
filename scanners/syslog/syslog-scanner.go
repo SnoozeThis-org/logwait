@@ -1,31 +1,32 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net"
 	"time"
 
+	"github.com/SnoozeThis-org/logwait/config"
 	"github.com/SnoozeThis-org/logwait/scanners/common"
 	syslog "github.com/influxdata/go-syslog/v3"
 	"github.com/influxdata/go-syslog/v3/octetcounting"
 	"github.com/influxdata/go-syslog/v3/rfc3164"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
+	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
 )
 
 var (
-	listenTCP  = flag.String("tcp", "", "Address to listen for syslog messages (TCP), for example :514")
-	listenUDP  = flag.String("udp", "", "Address to listen for syslog messages (UDP)")
-	listenUnix = flag.String("unix", "", "Path to Unix domain socket")
-	fmt3164    = flag.Bool("rfc3164", false, "Syslog messages confirm to RFC3164")
-	fmt5424    = flag.Bool("rfc5424", false, "Syslog messages confirm to RFC5424")
+	listenTCP  = pflag.String("tcp", "", "Address to listen for syslog messages (TCP), for example :514")
+	listenUDP  = pflag.String("udp", "", "Address to listen for syslog messages (UDP)")
+	listenUnix = pflag.String("unix", "", "Path to Unix domain socket")
+	fmt3164    = pflag.Bool("rfc3164", false, "Syslog messages confirm to RFC3164")
+	fmt5424    = pflag.Bool("rfc5424", false, "Syslog messages confirm to RFC5424")
 
 	srv *common.Service
 )
 
 func main() {
-	flag.Parse()
+	config.Parse()
 
 	if *fmt3164 && *fmt5424 {
 		log.Fatalf("Cannot use both RFC3164 and RFC424")

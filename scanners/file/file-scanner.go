@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -12,8 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/SnoozeThis-org/logwait/config"
 	"github.com/SnoozeThis-org/logwait/scanners/common"
 	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/pflag"
 	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 )
@@ -34,16 +35,16 @@ var (
 )
 
 func main() {
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [flags] <file> [<file> ...]\n", os.Args[0])
-		flag.PrintDefaults()
+	pflag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [flags] <file> [<file> ...]\n", os.Args[0])
+		pflag.PrintDefaults()
 		os.Exit(2)
 	}
 
-	flag.Parse()
+	config.Parse()
 
-	if flag.NArg() < 1 {
-		flag.Usage()
+	if pflag.NArg() < 1 {
+		pflag.Usage()
 	}
 
 	c, err := grpc.Dial(*common.ObserverAddress, grpc.WithInsecure())
@@ -52,8 +53,8 @@ func main() {
 	}
 	defer c.Close()
 
-	filesToWatch := make(map[string]struct{}, flag.NArg())
-	for _, fn := range flag.Args() {
+	filesToWatch := make(map[string]struct{}, pflag.NArg())
+	for _, fn := range pflag.Args() {
 		if _, err := os.Stat(fn); errors.Is(err, os.ErrNotExist) {
 			log.Fatalf("failed to stat %q", fn)
 		}

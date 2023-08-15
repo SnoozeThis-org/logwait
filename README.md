@@ -22,15 +22,15 @@ If you have a need for a specific scanner for your logging application feel free
 package main
 
 import (
-	"flag"
 	"log"
 
+	"github.com/SnoozeThis-org/logwait/config"
 	"github.com/SnoozeThis-org/logwait/scanners/common"
 	"google.golang.org/grpc"
 )
 
 func main() {
-	flag.Parse()
+	config.Parse()
 
 	// Connect to the observer
 	c, err := grpc.Dial(*common.ObserverAddress, grpc.WithInsecure())

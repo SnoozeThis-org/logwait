@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"regexp"
@@ -10,11 +9,12 @@ import (
 	"time"
 
 	pb "github.com/SnoozeThis-org/logwait/proto"
+	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
 )
 
 var (
-	ObserverAddress = flag.String("observer-address", "localhost:1600", "gRPC address of the observer")
+	ObserverAddress = pflag.String("observer-address", "localhost:1600", "gRPC address of the observer")
 )
 
 type Observable struct {

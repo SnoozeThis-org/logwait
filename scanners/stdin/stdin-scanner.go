@@ -3,24 +3,25 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/SnoozeThis-org/logwait/config"
 	"github.com/SnoozeThis-org/logwait/scanners/common"
+	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
 )
 
 var (
-	readJson = flag.Bool("json", false, "Read json instead of lines")
+	readJson = pflag.Bool("json", false, "Read json instead of lines")
 
 	srv *common.Service
 )
 
 func main() {
-	flag.Parse()
+	config.Parse()
 
 	c, err := grpc.Dial(*common.ObserverAddress, grpc.WithInsecure())
 	if err != nil {
