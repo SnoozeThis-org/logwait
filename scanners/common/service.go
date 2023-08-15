@@ -111,6 +111,16 @@ func (s *Service) connectToObserver() error {
 			s.addObservable(m.NewObservable)
 		case *pb.ObserverToScanner_CancelObservable:
 			s.cancelObservable(m.CancelObservable)
+		case *pb.ObserverToScanner_TestFilters:
+			reply := s.testFilters(m.TestFilters)
+			reply.TestId = m.TestFilters.TestId
+			if err := stream.Send(&pb.ScannerToObserver{
+				Msg: &pb.ScannerToObserver_TestFilters{
+					TestFilters: reply,
+				},
+			}); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unexpected %T from Scanner", msg.Msg)
 		}
@@ -193,6 +203,17 @@ func (s *Service) sendRejection(id, msg string) {
 			},
 		},
 	})
+}
+
+func (s *Service) testFilters(req *pb.TestFiltersRequest) *pb.TestFiltersResponse {
+	var ret pb.TestFiltersResponse
+	for _, f := range req.Filters {
+		_, err := regexp.Compile(f.Regexp)
+		if err != nil {
+			ret.Errors = append(ret.Errors, "invalid regexp for field "+f.Field+": "+err.Error())
+		}
+	}
+	return &ret
 }
 
 // WaitForInitialConnection waits the filters to be received from the Observer.

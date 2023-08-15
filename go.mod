@@ -4,9 +4,10 @@ go 1.18
 
 require (
 	github.com/Jille/convreq v1.6.1-0.20230808184511-45e4d7abdccd
+	github.com/Jille/genericz v0.4.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
-	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
+	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
 )

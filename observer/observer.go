@@ -41,6 +41,8 @@ type service struct {
 	reportedRejections        map[string]struct{}
 	initialObservablesFetched chan struct{}
 	registeredUrl             string
+	pendingTestFilters        map[int64]chan *pb.TestFiltersResponse
+	nextTestId                int64
 }
 
 func main() {
@@ -60,6 +62,7 @@ func main() {
 		unconfirmedObservations:   map[string]struct{}{},
 		reportedRejections:        map[string]struct{}{},
 		initialObservablesFetched: make(chan struct{}),
+		pendingTestFilters:        map[int64]chan *pb.TestFiltersResponse{},
 	}
 
 	go srv.talkToSnoozeThisLoop()
@@ -287,6 +290,8 @@ func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error
 			s.observedObservable(m.ObservedObservable)
 		case *pb.ScannerToObserver_RejectObservable:
 			s.rejectObservable(m.RejectObservable)
+		case *pb.ScannerToObserver_TestFilters:
+			s.handleTestFiltersResponse(m.TestFilters)
 		default:
 			return fmt.Errorf("unexpected %T from Scanner", msg.Msg)
 		}

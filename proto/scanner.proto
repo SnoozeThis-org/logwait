@@ -19,11 +19,22 @@ message RegisterScannerResponse {
 	repeated Observable active_observables = 1;
 }
 
+message TestFiltersRequest {
+	int64 test_id = 1;
+	repeated Filter filters = 2;
+}
+
+message TestFiltersResponse {
+	int64 test_id = 1;
+	repeated string errors = 2;
+}
+
 message ScannerToObserver {
 	oneof msg {
 		RegisterScannerRequest register = 1;
 		string observed_observable = 2;
 		RejectObservable reject_observable = 3;
+		TestFiltersResponse test_filters = 4;
 	}
 }
 
@@ -32,5 +43,6 @@ message ObserverToScanner {
 		RegisterScannerResponse register = 1;
 		Observable new_observable = 2;
 		string cancel_observable = 3;
+		TestFiltersRequest test_filters = 4;
 	}
 }
