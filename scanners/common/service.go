@@ -303,6 +303,12 @@ func (l *FieldLearner) Seen(field string) {
 	}
 }
 
+func (l *FieldLearner) SetStaticFields(fields []string) {
+	for _, f := range fields {
+		l.add(f)
+	}
+}
+
 func (l *FieldLearner) checkIgnored(field string) (parentsLength int, ignored bool) {
 	var offset int
 	for {

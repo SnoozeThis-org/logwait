@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/SnoozeThis-org/logwait/config"
@@ -22,7 +23,8 @@ var (
 	fmt3164    = pflag.Bool("rfc3164", false, "Syslog messages confirm to RFC3164")
 	fmt5424    = pflag.Bool("rfc5424", false, "Syslog messages confirm to RFC5424")
 
-	srv *common.Service
+	srv     *common.Service
+	learner *common.FieldLearner
 )
 
 func main() {
@@ -44,7 +46,8 @@ func main() {
 	}
 
 	srv = common.NewService(c, "syslog-scanner")
-	srv.SetFilterableFields([]string{"message", "appname", "hostname"})
+	learner = srv.CreateFieldLearner('.')
+	learner.SetStaticFields([]string{"message", "appname", "hostname", "procid", "msgid", "facility", "severity"})
 
 	if *listenTCP != "" {
 		tcpAddr, err := net.ResolveTCPAddr("tcp", *listenTCP)
@@ -150,10 +153,18 @@ func handleUnix(c net.Conn) {
 
 func newMessage(msg syslog.Message) {
 	var base syslog.Base
+	var structuredData map[string]map[string]string
 	switch v := msg.(type) {
 	case *rfc5424.SyslogMessage:
 		base = v.Base
-		// TODO: allow filtering on structured data?
+		if v.StructuredData != nil {
+			structuredData = *v.StructuredData
+			for k1, m := range structuredData {
+				for k2 := range m {
+					learner.Seen(k1 + "." + k2)
+				}
+			}
+		}
 	case *rfc3164.SyslogMessage:
 		base = v.Base
 	default:
@@ -163,17 +174,37 @@ func newMessage(msg syslog.Message) {
 
 	srv.MatchObservables(func(o common.Observable) bool {
 		for field, regexp := range o.Regexps {
-			var v string
+			var v *string
 			switch field {
 			case "message":
-				v = *base.Message
+				v = base.Message
 			case "appname":
-				v = *base.Appname
+				v = base.Appname
 			case "hostname":
-				v = *base.Hostname
-				// TODO: Other fields?
+				v = base.Hostname
+			case "procid":
+				v = base.ProcID
+			case "msgid":
+				v = base.MsgID
+			case "facility":
+				v = base.FacilityLevel()
+			case "severity":
+				v = base.SeverityLevel()
+			default:
+				sp := strings.SplitN(field, ".", 2)
+				if len(sp) != 2 {
+					return false
+				}
+				s, ok := structuredData[sp[0]][sp[1]]
+				if !ok {
+					return false
+				}
+				v = &s
 			}
-			if !regexp.MatchString(v) {
+			if v == nil {
+				return false
+			}
+			if !regexp.MatchString(*v) {
 				return false
 			}
 		}
