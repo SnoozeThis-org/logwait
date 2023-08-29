@@ -17,11 +17,10 @@ import (
 )
 
 var (
-	listenTCP  = pflag.String("tcp", "", "Address to listen for syslog messages (TCP), for example :514")
-	listenUDP  = pflag.String("udp", "", "Address to listen for syslog messages (UDP)")
-	listenUnix = pflag.String("unix", "", "Path to Unix domain socket")
-	fmt3164    = pflag.Bool("rfc3164", false, "Syslog messages confirm to RFC3164")
-	fmt5424    = pflag.Bool("rfc5424", false, "Syslog messages confirm to RFC5424")
+	listenTCP = pflag.String("tcp", "", "Address to listen for syslog messages (TCP), for example :514")
+	listenUDP = pflag.String("udp", "", "Address to listen for syslog messages (UDP)")
+	fmt3164   = pflag.Bool("rfc3164", false, "Syslog messages confirm to RFC3164")
+	fmt5424   = pflag.Bool("rfc5424", false, "Syslog messages confirm to RFC5424")
 
 	srv     *common.Service
 	learner *common.FieldLearner
@@ -73,14 +72,6 @@ func main() {
 		go handleUDP(l)
 	}
 
-	if *listenUnix != "" {
-		c, err := net.Dial("unix", *listenUnix)
-		if err != nil {
-			log.Fatalf("Cannot open Unix domain socket %v: %v", *listenUnix, err)
-		}
-		go handleUnix(c)
-	}
-
 	srv.ConnectLoop()
 }
 
@@ -118,28 +109,6 @@ func handleUDP(l *net.UDPConn) {
 	resp := make([]byte, 9000)
 	for {
 		n, err := l.Read(resp)
-		if err == nil {
-			msg, err := p.Parse(resp[:n])
-			if err != nil {
-				log.Printf("Failed to parse log message: %v", err)
-				continue
-			}
-			newMessage(msg)
-		}
-	}
-}
-
-func handleUnix(c net.Conn) {
-	var p syslog.Machine
-	if *fmt3164 {
-		p = rfc3164.NewParser(rfc3164.WithBestEffort())
-	} else {
-		p = rfc5424.NewParser(rfc5424.WithBestEffort())
-	}
-
-	resp := make([]byte, 20000)
-	for {
-		n, err := c.Read(resp)
 		if err == nil {
 			msg, err := p.Parse(resp[:n])
 			if err != nil {
