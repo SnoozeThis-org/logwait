@@ -44,7 +44,7 @@ func (s *service) handleHttp(ctx context.Context, req *http.Request) convreq.Htt
 	}
 	fields := map[string]struct{}{}
 	for f, vs := range req.Form {
-		if len(vs) == 0 {
+		if len(vs) == 0 || len(vs[0]) == 0 {
 			continue
 		}
 		v.Values[f] = vs[0]
