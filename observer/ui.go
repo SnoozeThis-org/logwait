@@ -12,7 +12,6 @@ import (
 	"github.com/Jille/convreq/respond"
 	"github.com/Jille/genericz/mapz"
 	pb "github.com/SnoozeThis-org/logwait/proto"
-	"golang.org/x/exp/maps"
 )
 
 //go:embed template.html
@@ -89,7 +88,7 @@ func (s *service) handleHttp(ctx context.Context, req *http.Request) convreq.Htt
 		v.Warnings = append(v.Warnings, "There are currently no scanners connected, so we aren't seeing any log lines at all.")
 	}
 	if len(fields) > 0 {
-		v.Fields = maps.Keys(fields)
+		v.Fields = mapz.KeysSorted(fields)
 	} else {
 		v.Fields = []string{"message"}
 	}
