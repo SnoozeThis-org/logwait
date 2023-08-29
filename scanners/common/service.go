@@ -88,12 +88,21 @@ func (s *Service) connectToObserver() error {
 	if err != nil {
 		return err
 	}
+
+	s.mtx.Lock()
 	s.observerStream = stream
 
 	r := msg.GetMsg().(*pb.ObserverToScanner_Register).Register
 	for _, o := range r.ActiveObservables {
-		s.addObservable(o)
+		s.addObservable_locked(o)
 	}
+	s.mtx.Unlock()
+
+	defer func() {
+		s.mtx.Lock()
+		s.observerStream = nil
+		s.mtx.Unlock()
+	}()
 
 	select {
 	case <-s.receivedInitialObservables:
@@ -130,6 +139,10 @@ func (s *Service) connectToObserver() error {
 func (s *Service) addObservable(o *pb.Observable) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
+	s.addObservable_locked(o)
+}
+
+func (s *Service) addObservable_locked(o *pb.Observable) {
 	val, ok := s.observables[o.Id]
 
 	if ok {
@@ -183,6 +196,10 @@ func (s *Service) notifyObserver(id string) {
 		return
 	}
 	if !o.observed {
+		return
+	}
+	if s.observerStream == nil {
+		// We'll send the message once we get reconnected.
 		return
 	}
 	// We ignore any error from Send(). The Recv() thread will soon notice the connection being gone too and will reconnect and then we'll retry sending this observation.
