@@ -29,12 +29,18 @@ message TestFiltersResponse {
 	repeated string errors = 2;
 }
 
+message UpdateFields {
+	// List of fields users can filter on.
+	repeated string fields = 2;
+}
+
 message ScannerToObserver {
 	oneof msg {
 		RegisterScannerRequest register = 1;
 		string observed_observable = 2;
 		RejectObservable reject_observable = 3;
 		TestFiltersResponse test_filters = 4;
+		UpdateFields update_fields = 5;
 	}
 }
 

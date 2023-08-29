@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/Jille/convreq v1.6.1-0.20230808184511-45e4d7abdccd
+	github.com/Jille/easymutex v1.1.0
 	github.com/Jille/genericz v0.4.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/influxdata/go-syslog/v3 v3.0.0

@@ -12,7 +12,7 @@ import (
 	"github.com/Jille/convreq/respond"
 	"github.com/Jille/genericz/mapz"
 	pb "github.com/SnoozeThis-org/logwait/proto"
-	"golang.org/x/exp/slices"
+	"golang.org/x/exp/maps"
 )
 
 //go:embed template.html
@@ -39,18 +39,17 @@ func (s *service) handleHttp(ctx context.Context, req *http.Request) convreq.Htt
 		return respond.BadRequest(err.Error())
 	}
 	o := &pb.Observable{}
-	v := templateVars{}
-	v.Fields = []string{"message"}
-	v.Values = map[string]string{}
-	v.Errors = map[string]string{}
+	v := templateVars{
+		Values: map[string]string{},
+		Errors: map[string]string{},
+	}
+	fields := map[string]struct{}{}
 	for f, vs := range req.Form {
 		if len(vs) == 0 {
 			continue
 		}
 		v.Values[f] = vs[0]
-		if !slices.Contains(v.Fields, f) {
-			v.Fields = append(v.Fields, f)
-		}
+		fields[f] = struct{}{}
 		o.Filters = append(o.Filters, &pb.Filter{
 			Field:  f,
 			Regexp: vs[0],
@@ -76,6 +75,11 @@ func (s *service) handleHttp(ctx context.Context, req *http.Request) convreq.Htt
 	s.mtx.Lock()
 	base := s.registeredUrl
 	numScanners := len(s.connectedScanners)
+	for _, fs := range s.fieldsPerScanner {
+		for _, f := range fs {
+			fields[f] = struct{}{}
+		}
+	}
 	s.mtx.Unlock()
 	if base == "" {
 		v.Warnings = append(v.Warnings, "We haven't been connected to SnoozeThis since startup yet and don't know the registered domain name yet. Making a guess that it is "+req.Host)
@@ -84,6 +88,12 @@ func (s *service) handleHttp(ctx context.Context, req *http.Request) convreq.Htt
 	if numScanners == 0 {
 		v.Warnings = append(v.Warnings, "There are currently no scanners connected, so we aren't seeing any log lines at all.")
 	}
+	if len(fields) > 0 {
+		v.Fields = maps.Keys(fields)
+	} else {
+		v.Fields = []string{"message"}
+	}
+
 	if len(v.Values) > 0 && !hasErrors {
 		if *signingKey != "" {
 			o.Signature = calculateSignature(o)

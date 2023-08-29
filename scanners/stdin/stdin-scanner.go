@@ -41,6 +41,7 @@ func main() {
 func lineConsumer() {
 	s := bufio.NewScanner(os.Stdin)
 	srv.WaitForInitialConnection()
+	srv.SetFilterableFields([]string{"message"})
 	for s.Scan() {
 		line := s.Text()
 		srv.MatchObservables(func(o common.Observable) bool {
@@ -65,11 +66,13 @@ func lineConsumer() {
 func jsonConsumer() {
 	d := json.NewDecoder(os.Stdin)
 	srv.WaitForInitialConnection()
+	learner := srv.CreateFieldLearner('.')
 	for {
 		var m map[string]any
 		if err := d.Decode(&m); err != nil {
 			log.Fatalf("Failed to read JSON from stdin: %v", err)
 		}
+		learnAllFields(learner, m, "")
 		srv.MatchObservables(func(o common.Observable) bool {
 			for field, regexp := range o.Regexps {
 				val, ok := jsonPathAsString(m, field)
@@ -108,5 +111,19 @@ func jsonPathAsString(m map[string]any, path string) (string, bool) {
 		return fmt.Sprint(v), true
 	default:
 		return "", false
+	}
+}
+
+func learnAllFields(l *common.FieldLearner, m map[string]any, prefix string) {
+	for k, v := range m {
+		if prefix != "" {
+			k = prefix + "." + k
+		}
+		sub, ok := v.(map[string]any)
+		if ok {
+			learnAllFields(l, sub, k)
+		} else {
+			l.Seen(k)
+		}
 	}
 }

@@ -44,6 +44,7 @@ func main() {
 	}
 
 	srv = common.NewService(c, "syslog-scanner")
+	srv.SetFilterableFields([]string{"message", "appname", "hostname"})
 
 	if *listenTCP != "" {
 		tcpAddr, err := net.ResolveTCPAddr("tcp", *listenTCP)

@@ -1,5 +1,7 @@
 github.com/Jille/convreq v1.6.1-0.20230808184511-45e4d7abdccd h1:b49ex4MJ2zaysSQUbdTmWND/cTXe30K/tcKjhfxxNMY=
 github.com/Jille/convreq v1.6.1-0.20230808184511-45e4d7abdccd/go.mod h1:rxovZlmUBweW9y/t9z+sfRrrPbSojkDG7Sb80ylLvrs=
+github.com/Jille/easymutex v1.1.0 h1:gwrUHsOXC7lE92XDI1Jl7NVcaldRER3dw4yPHnDnjFc=
+github.com/Jille/easymutex v1.1.0/go.mod h1:QuA55vsPZYCYk/C5mKc4CwFKU3nyPj+YgeJpFcgr05g=
 github.com/Jille/genericz v0.4.0 h1:ppnZsT9Uu866k9Sa9mlsZV6Z2Nyy/7zVmEc3mUlnTbE=
 github.com/Jille/genericz v0.4.0/go.mod h1:J9GF608ey+8AmME0HFGGFuD5f+2TRHbOfcmaF8dIIXI=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

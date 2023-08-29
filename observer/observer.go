@@ -42,6 +42,7 @@ type service struct {
 	activeObservables         map[string]*pb.Observable
 	connectedScanners         map[pb.ObserverService_CommunicateServer]struct{}
 	scannerType               string
+	fieldsPerScanner          map[pb.ObserverService_CommunicateServer][]string
 	snoozeThisClient          pb.SnoozeThisLogServiceClient
 	snoozeThisClientStream    pb.SnoozeThisLogService_CommunicateClient
 	unconfirmedObservations   map[string]struct{}
@@ -74,6 +75,7 @@ func main() {
 	srv := &service{
 		activeObservables:         map[string]*pb.Observable{},
 		connectedScanners:         map[pb.ObserverService_CommunicateServer]struct{}{},
+		fieldsPerScanner:          map[pb.ObserverService_CommunicateServer][]string{},
 		snoozeThisClient:          pb.NewSnoozeThisLogServiceClient(c),
 		unconfirmedObservations:   map[string]struct{}{},
 		reportedRejections:        map[string]struct{}{},
@@ -287,6 +289,7 @@ func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error
 	defer func() {
 		s.mtx.Lock()
 		delete(s.connectedScanners, stream)
+		delete(s.fieldsPerScanner, stream)
 		s.mtx.Unlock()
 	}()
 
@@ -312,6 +315,10 @@ func (s *service) Communicate(stream pb.ObserverService_CommunicateServer) error
 			s.rejectObservable(m.RejectObservable)
 		case *pb.ScannerToObserver_TestFilters:
 			s.handleTestFiltersResponse(m.TestFilters)
+		case *pb.ScannerToObserver_UpdateFields:
+			s.mtx.Lock()
+			s.fieldsPerScanner[stream] = m.UpdateFields.Fields
+			s.mtx.Unlock()
 		default:
 			return fmt.Errorf("unexpected %T from Scanner", msg.Msg)
 		}
