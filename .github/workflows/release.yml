@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  # To create a new release
+  contents: write
+
+jobs:
+
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+
+    - run: mkdir _publish
+
+    - name: Build for linux/amd64
+      run: bash .github/workflows/release.sh linux amd64
+
+    - name: Build for linux/arm64
+      run: bash .github/workflows/release.sh linux arm64
+
+    - name: Build for freebsd/amd64
+      run: bash .github/workflows/release.sh freebsd amd64
+
+    - name: Build for darwin/amd64
+      run: bash .github/workflows/release.sh darwin amd64
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: _publish/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
