@@ -16,8 +16,53 @@ A scanner is a simple program that digests log messages and scans these messages
 
 You can start as many scanners as you need and they can run on different hosts than the observer. The scanner connects to the observer using gRPC (by default on tcp port 1600).
 
+# Running the observer
+1. Download the latest version at https://github.com/SnoozeThis-org/logwait/releases/latest
+2. Get a token at https://www.snoozethis.com/logs/
+3. Create a config file (or use command line arguments or environment variables):
+   ```
+   {
+     "http-port": 8080,
+     "grpc-port": 1600,
+     "token": "token from step 2",
+     "signing-key": "secret"
+   }
+   ```
+   You can choose your own ports and signing key. Make sure your coworkers can access the UI at the http port and the scanner(s) can connect to the observer using the grpc port.
+4. Start the observer
+   ```
+   observer --config /path/to/config.json
+   ```
+5. Start one or more scanners (see below)
+6. Point your browser to the http port and create a new observable
+
+# Running the syslog scanner
+The syslog scanner accepts log messages in RFC3164 or RFC5424 format via TCP or UDP
+1. Make sure your observer (see above) is running
+2. Download the latest version at https://github.com/SnoozeThis-org/logwait/releases/latest
+3. Start the scanner
+   ```
+   # For RFC3164 messages via UDP
+   syslog-scanner --observer-address observer-ip:1600 --udp :514 --rfc3164
+   # For RFC5424 messages via TCP
+   syslog-scanner --observer-address observer-ip:1600 --tcp :514 --rfc5424
+   ```
+4. Have your syslog forward messages to the scanner. This depends on your version and flavour of syslog, but this will probably work:
+   ```
+   *.* @scanner-ip
+   ```
+
+# Running the file scanner
+The file scanner tails one or more files
+1. Make sure your observer (see above) is running
+2. Download the latest version at https://github.com/SnoozeThis-org/logwait/releases/latest
+3. Start the scanner
+   ```
+   file-scanner --observer-address observer-ip:1600 <file>
+   ```
+
 # Creating your own scanner
-If you have a need for a specific scanner for your logging application feel free to create an issue. You can also create your own scanner. Have a look at one of the existing scanners or start using this Go code:
+If you have a need for a specific scanner for your logging application feel free to create an [issue](https://github.com/SnoozeThis-org/logwait/issues/new). You can also create your own scanner. Have a look at one of the existing scanners or start using this Go code:
 ```
 package main
 
