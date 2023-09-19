@@ -62,6 +62,8 @@ func elasticsearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	handleMessage(m)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte{'{', '}'})
 }
 
 type elasticBulkCommand struct {
@@ -77,8 +79,7 @@ func elasticsearchBulk(w http.ResponseWriter, r *http.Request) {
 	for {
 		if err := d.Decode(&ebc); err != nil {
 			if err == io.EOF {
-				w.WriteHeader(204)
-				return
+				break
 			}
 			http.Error(w, "Failed to parse JSON body: "+err.Error(), 400)
 			return
@@ -94,6 +95,8 @@ func elasticsearchBulk(w http.ResponseWriter, r *http.Request) {
 		}
 		handleMessage(m)
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte{'{', '}'})
 }
 
 func ndjson(w http.ResponseWriter, r *http.Request) {
@@ -102,14 +105,15 @@ func ndjson(w http.ResponseWriter, r *http.Request) {
 		var m map[string]any
 		if err := d.Decode(&m); err != nil {
 			if err == io.EOF {
-				w.WriteHeader(204)
-				return
+				break
 			}
 			http.Error(w, "Failed to parse JSON body: "+err.Error(), 400)
 			return
 		}
 		handleMessage(m)
 	}
+	w.WriteHeader(204)
+	return
 }
 
 func handleMessage(m map[string]any) {
