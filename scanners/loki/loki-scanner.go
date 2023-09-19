@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -12,11 +11,12 @@ import (
 	gogo "github.com/gogo/protobuf/proto"
 	"github.com/grafana/loki/pkg/push"
 	"github.com/klauspost/compress/s2"
+	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
 )
 
 var (
-	port = flag.Int("port", 0, "Port to open for HTTP")
+	port = pflag.Int("port", 0, "Port to open for HTTP")
 
 	srv     *common.Service
 	learner *common.FieldLearner
