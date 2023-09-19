@@ -43,9 +43,9 @@ The syslog scanner accepts log messages in RFC3164 or RFC5424 format via TCP or 
 3. Start the scanner
    ```
    # For RFC3164 messages via UDP
-   syslog-scanner -observer-address observer-ip:1600 -udp :514 -rfc3164
+   syslog-scanner --observer-address observer-ip:1600 --udp :514 --rfc3164
    # For RFC5424 messages via TCP
-   syslog-scanner -observer-address observer-ip:1600 -tcp :514 -rfc5424
+   syslog-scanner --observer-address observer-ip:1600 --tcp :514 --rfc5424
    ```
 4. Have your syslog forward messages to the scanner. This depends on your version and flavour of syslog, but this will probably work:
    ```
@@ -58,7 +58,7 @@ The file scanner tails one or more files
 2. Download the latest version at https://github.com/SnoozeThis-org/logwait/releases/latest
 3. Start the scanner
    ```
-   file-scanner -observer-address observer-ip:1600 <file>
+   file-scanner --observer-address observer-ip:1600 <file>
    ```
 
 # Creating your own scanner
