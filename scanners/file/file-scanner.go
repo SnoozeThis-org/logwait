@@ -170,11 +170,14 @@ func TailFile(filename string, useNotify bool) error {
 	if err != nil {
 		return err
 	}
+	if _, err := file.Seek(0, os.SEEK_END); err != nil {
+		return err
+	}
 
 	f := &File{
 		Name:         filename,
 		OriginalName: filename,
-		Stop:         make(chan struct{}),
+		Stop:         make(chan struct{}, 1),
 		file:         file,
 		useNotify:    useNotify,
 	}
