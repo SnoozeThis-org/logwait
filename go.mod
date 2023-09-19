@@ -7,6 +7,7 @@ require (
 	github.com/Jille/easymutex v1.1.0
 	github.com/Jille/genericz v0.4.0
 	github.com/fsnotify/fsnotify v1.6.0
+	github.com/gogo/protobuf v1.3.2
 	github.com/grafana/loki/pkg/push v0.0.0-20230919104151-a8d5815510bd
 	github.com/influxdata/go-syslog/v3 v3.0.0
 	github.com/klauspost/compress v1.17.0
@@ -17,7 +18,6 @@ require (
 )
 
 require (
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/schema v1.2.0 // indirect

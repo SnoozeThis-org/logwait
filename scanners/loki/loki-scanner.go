@@ -8,6 +8,7 @@ import (
 
 	"github.com/SnoozeThis-org/logwait/config"
 	"github.com/SnoozeThis-org/logwait/scanners/common"
+	"github.com/gogo/protobuf/jsonpb"
 	gogo "github.com/gogo/protobuf/proto"
 	"github.com/grafana/loki/pkg/push"
 	"github.com/klauspost/compress/s2"
@@ -45,22 +46,29 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), 400)
-		return
-	}
-
-	body, err = s2.Decode(nil, body)
-	if err != nil {
-		http.Error(w, err.Error(), 400)
-		return
-	}
-
 	var msg push.PushRequest
-	if err := gogo.Unmarshal(body, &msg); err != nil {
-		http.Error(w, err.Error(), 400)
-		return
+	if r.Header.Get("Content-Type") == "application/json" {
+		if err := jsonpb.Unmarshal(r.Body, &msg); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	} else {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+
+		body, err = s2.Decode(nil, body)
+		if err != nil {
+			http.Error(w, "Failed to snappy decompress: "+err.Error(), 400)
+			return
+		}
+
+		if err := gogo.Unmarshal(body, &msg); err != nil {
+			http.Error(w, "Failed to unmarshal into proto: "+err.Error(), 400)
+			return
+		}
 	}
 
 	for _, s := range msg.Streams {
